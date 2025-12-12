@@ -16,7 +16,7 @@ jobs:
   # ジョブ名: hello-world
   hello-world:
     # 実行環境を指定（Ubuntu最新版）
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-slim
 
     # ステップの定義
     steps:

@@ -20,7 +20,7 @@ permissions:
 jobs:
   # コード品質チェック
   quality-check:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-slim
 
     steps:
       - name: コードのチェックアウト
@@ -46,7 +46,7 @@ jobs:
 
   # テストの実行
   test:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-slim
 
     steps:
       - name: コードのチェックアウト
@@ -69,7 +69,7 @@ jobs:
 
   # ビルドの確認
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-slim
 
     steps:
       - name: コードのチェックアウト
@@ -99,7 +99,7 @@ jobs:
 
   # すべてのチェックが成功したことを確認
   all-checks-passed:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-slim
     needs: [quality-check, test, build]
 
     steps:
