@@ -1,175 +1,168 @@
 # うるう年判定アプリ - GitHub Actions 実践プロジェクト
 
-GitHub Actionsを実践的に学ぶためのサンプルプロジェクトです。
-うるう年を判定するシンプルなウェブアプリケーションを題材に、CI/CDパイプラインの構築を体験できます。
+GitHub Actions を実践的に学ぶためのサンプルプロジェクトです。
+うるう年を判定するシンプルなウェブアプリケーションを題材に、本番運用レベルの CI/CD パイプラインの構築を体験できます。
 
-## プロジェクト概要
+## 🌐 デモサイト
 
-### 使用技術
+**本番環境**: http://651783364218-github-actions-experiment.s3-website-ap-northeast-1.amazonaws.com
+
+## ✨ プロジェクトの特徴
+
+このプロジェクトは、GitHub Actions を使った**実践的な CI/CD パイプライン**を学べるように設計されています：
+
+✅ **完全自動化された CI/CD** - PR から本番デプロイまで全自動
+✅ **Terraform State 管理** - S3 バックエンドで永続化、DynamoDB でロック
+✅ **セキュアな認証** - OIDC による一時的な認証（長期クレデンシャル不要）
+✅ **品質保証** - フォーマッター、リンター、テスト（34 テスト）
+✅ **最適化されたワークフロー** - ドキュメント変更時はスキップ
+
+## 📚 ドキュメント
+
+- **[運用手引書](docs/operations-guide.md)** - 日常の開発・運用ガイド（推奨）
+- [AWS OIDC セットアップ](docs/aws-oidc-setup.md) - AWS 認証の設定手順
+- [Terraform Backend セットアップ](docs/terraform-backend-setup.md) - State 管理の設定
+- [GitHub Actions コンセプト](docs/github-actions-concept.md) - ワークフローの基礎
+
+## 🛠 使用技術
 
 - **フロントエンド**: Hono SSG（静的サイト生成）
-- **バックエンド**: AWS Lambda（Node.js）
+- **バックエンド**: AWS Lambda（Node.js 20）
 - **インフラ**: AWS（S3 + Lambda + API Gateway）
 - **IaC**: Terraform
 - **CI/CD**: GitHub Actions
 - **認証**: OIDC（OpenID Connect）
+- **パッケージマネージャー**: pnpm
+- **テスト**: Vitest
+- **リンター**: ESLint
+- **フォーマッター**: Prettier
 
-### 主な機能
+## 🚀 主な機能
 
-1. **うるう年判定API**: 任意の年がうるう年かどうかを判定
-2. **静的ウェブサイト**: S3でホスティングされたフロントエンド
-3. **自動テスト**: PR作成時にフォーマッター、リンター、テストを自動実行
-4. **自動デプロイ**: mainブランチへのマージ時に自動デプロイ
+### アプリケーション機能
 
-## GitHub Actionsワークフロー
+1. **うるう年判定**: 任意の年がうるう年かどうかを判定
+2. **静的ウェブサイト**: S3 でホスティングされた高速なフロントエンド
+3. **レスポンシブデザイン**: モバイル対応の美しい UI
 
-### 1. PR Check（`.github/workflows/pr-check.yml`）
+### CI/CD 機能
 
-プルリクエスト作成時に自動実行されるワークフロー
+1. **PR Check ワークフロー**: PR 作成時に自動的に品質チェックを実行
+2. **Deploy ワークフロー**: main ブランチへのマージ時に自動デプロイ
+3. **Setup Backend ワークフロー**: Terraform State 管理の初期セットアップ
+4. **Destroy ワークフロー**: AWS リソースの安全な削除
 
-#### 実行内容
+## 🔄 GitHub Actions ワークフロー
 
-- **コードフォーマット確認**: Prettierによるコードスタイルチェック
-- **リンター実行**: ESLintによるコード品質チェック
-- **ユニットテスト**: Vitestによるテスト実行
-- **ビルド確認**: 静的サイトが正常に生成できるか確認
+### 1. PR Check
 
-#### パーミッション
+**トリガー**: main ブランチへのプルリクエスト
+**所要時間**: 約 30 秒
+**スキップ条件**: ドキュメント（`docs/**`、`**.md`）のみの変更
 
-```yaml
-permissions:
-  contents: read # リポジトリの内容を読む
-  pull-requests: write # PRにコメントを書く
-```
+**実行内容**:
 
-### 2. Deploy（`.github/workflows/deploy.yml`）
+- ✅ コードフォーマット確認（Prettier）
+- ✅ リンター実行（ESLint）
+- ✅ ユニットテスト実行（34 テスト）
+- ✅ 静的サイトビルド確認
 
-mainブランチへのマージ時に自動実行されるデプロイワークフロー
+### 2. Deploy to AWS
 
-#### 実行内容
+**トリガー**: main ブランチへのマージ
+**所要時間**: 約 1 分 30 秒
+**スキップ条件**: ドキュメントやメンテナンスワークフローのみの変更
 
-1. **デプロイ前テスト**: 再度テストを実行して安全性を確認
-2. **インフラデプロイ**: Terraformでインフラをプロビジョニング
-3. **ウェブサイトデプロイ**: 静的サイトをS3にアップロード
+**実行内容**:
 
-#### パーミッション
+1. **pre-deploy-test**: デプロイ前の最終テスト
+2. **deploy-infrastructure**: Terraform でインフラをプロビジョニング
+   - S3 バケット（静的サイトホスティング）
+   - Lambda 関数
+   - API Gateway
+   - IAM ロール
+3. **deploy-website**: 静的サイトを S3 にデプロイ
 
-```yaml
-permissions:
-  id-token: write # OIDC認証用
-  contents: read # リポジトリの内容を読む
-```
+**重要**: Terraform State は S3 に保存され、DynamoDB でロックされます。
 
-#### OIDC認証
+### 3. Setup Terraform Backend
 
-GitHub ActionsからAWSへの認証には、OIDC（OpenID Connect）を使用します。
-これにより、長期的なアクセスキーを保存する必要がなく、より安全に認証できます。
+**トリガー**: 手動実行のみ
+**実行タイミング**: 初回セットアップ時のみ
 
-## セットアップ手順
+**実行内容**:
 
-### 1. リポジトリのクローン
+- DynamoDB テーブル作成（state locking 用）
+- IAM ポリシー作成（S3/DynamoDB アクセス権限）
+- S3 バケットのバージョニング有効化
+
+### 4. Destroy AWS Resources
+
+**トリガー**: 手動実行のみ（確認プロンプト付き）
+**実行内容**: すべての AWS リソースを安全に削除
+
+## 🚀 クイックスタート
+
+### 前提条件
+
+- Node.js 20 以上
+- pnpm（推奨）
+- AWS アカウント
+- GitHub アカウント
+
+### ローカル開発
 
 ```bash
+# 1. リポジトリをクローン
 git clone https://github.com/your-username/github-actions-in-action.git
 cd github-actions-in-action
-```
 
-### 2. 依存関係のインストール
-
-このプロジェクトは **pnpm** を使用します。
-
-```bash
-# pnpmのインストール（未インストールの場合）
+# 2. pnpm をインストール（未インストールの場合）
 npm install -g pnpm
 
-# 依存関係のインストール
+# 3. 依存関係をインストール
 pnpm install
-```
 
-### 3. ローカル開発
-
-```bash
-# 開発サーバーの起動
-pnpm run dev
-
-# テストの実行
+# 4. テストを実行
 pnpm test
 
-# リンターの実行
+# 5. リンターとフォーマッターを実行
 pnpm run lint
+pnpm run format:check
 
-# フォーマッターの実行
-pnpm run format
+# 6. 静的サイトを生成
+pnpm run ssg
+
+# 7. すべてのチェックを一度に実行
+pnpm run format:check && pnpm run lint && pnpm test && pnpm run ssg
 ```
 
-### 4. AWS環境のセットアップ
+### AWS 環境のセットアップ
 
-#### 4.1 OIDC IDプロバイダーの作成
+詳細は [AWS OIDC セットアップガイド](docs/aws-oidc-setup.md) を参照してください。
 
-AWSマネジメントコンソールで以下を実施：
+**概要**:
 
-1. IAM → IDプロバイダー → プロバイダーを追加
-2. プロバイダーのタイプ: OpenID Connect
-3. プロバイダーのURL: `https://token.actions.githubusercontent.com`
-4. 対象者: `sts.amazonaws.com`
+1. AWS で OIDC ID プロバイダーを作成
+2. IAM ロールを作成（Terraform、Lambda、S3 などの権限を付与）
+3. GitHub Secrets を設定
+   - `AWS_ROLE_ARN`: IAM ロールの ARN
+   - `WEBSITE_BUCKET_NAME`: S3 バケット名
+4. Setup Backend ワークフローを実行（一度だけ）
+5. main ブランチにプッシュしてデプロイ
 
-#### 4.2 IAMロールの作成
-
-```json
-{
-  "Version": "2012-10-17",
-  "Statement": [
-    {
-      "Effect": "Allow",
-      "Principal": {
-        "Federated": "arn:aws:iam::YOUR_ACCOUNT_ID:oidc-provider/token.actions.githubusercontent.com"
-      },
-      "Action": "sts:AssumeRoleWithWebIdentity",
-      "Condition": {
-        "StringEquals": {
-          "token.actions.githubusercontent.com:aud": "sts.amazonaws.com"
-        },
-        "StringLike": {
-          "token.actions.githubusercontent.com:sub": "repo:YOUR_GITHUB_USERNAME/github-actions-in-action:*"
-        }
-      }
-    }
-  ]
-}
-```
-
-必要な権限:
-
-- S3: フルアクセス（ウェブサイトホスティング用）
-- Lambda: フルアクセス（関数のデプロイ）
-- API Gateway: フルアクセス（APIの作成）
-- IAM: ロール作成権限
-- CloudWatch Logs: ログ書き込み
-
-#### 4.3 GitHub Secretsの設定
-
-リポジトリの Settings → Secrets and variables → Actions で以下を設定：
-
-- `AWS_ROLE_ARN`: 作成したIAMロールのARN（例: `arn:aws:iam::123456789012:role/GitHubActionsRole`）
-- `WEBSITE_BUCKET_NAME`: S3バケット名（グローバルに一意な名前）
-
-### 5. Terraformの設定
+### 初回デプロイ
 
 ```bash
-cd terraform
-cp terraform.tfvars.example terraform.tfvars
-```
+# 1. Setup Backend ワークフローを実行（GitHub UI または CLI）
+gh workflow run setup-backend.yml
 
-`terraform.tfvars`を編集して、S3バケット名を設定します。
-
-### 6. デプロイ
-
-mainブランチにプッシュすると、自動的にデプロイが実行されます。
-
-```bash
+# 2. コードをコミット
 git add .
-git commit -m "Initial deployment"
+git commit -m "feat: Initial deployment"
 git push origin main
+
+# 3. Deploy ワークフローが自動実行されます
 ```
 
 ## ディレクトリ構造
@@ -200,55 +193,32 @@ git push origin main
 └── .prettierrc.json
 ```
 
-## 学習ポイント
+## 📖 学習ポイント
 
-### 1. ワークフロー定義の各ブロック
+このプロジェクトから学べる主要な概念：
 
-詳細は [`docs/github-actions-concept.md`](docs/github-actions-concept.md) を参照してください。
+### GitHub Actions の基礎
 
-- `name`: ワークフローの名前
-- `on`: トリガーイベント（push, pull_request, workflow_dispatchなど）
-- `permissions`: ワークフローが必要とする権限
-- `jobs`: 実行するジョブの定義
-- `steps`: ジョブ内の個別タスク
+- ✅ **ワークフロー定義**: `on`, `jobs`, `steps` の構造
+- ✅ **トリガー条件**: `pull_request`, `push`, `workflow_dispatch`
+- ✅ **パーミッション管理**: 最小権限の原則
+- ✅ **ジョブの依存関係**: `needs` による実行順序制御
+- ✅ **パス条件**: `paths-ignore` で無駄な実行を削減
 
-### 2. パーミッション
+### AWS との統合
 
-テストとデプロイで必要な権限が異なります：
+- ✅ **OIDC 認証**: 長期クレデンシャル不要のセキュアな認証
+- ✅ **Terraform**: インフラのコード化
+- ✅ **State 管理**: S3 バックエンドと DynamoDB ロック
 
-#### テスト（PR Check）
+### CI/CD ベストプラクティス
 
-- `contents: read` - コードの読み取り
-- `pull-requests: write` - テスト結果のコメント
+- ✅ **品質保証**: 自動テスト、リンター、フォーマッターの統合
+- ✅ **並列実行**: 独立したジョブの並列化で時間短縮
+- ✅ **キャッシュ活用**: pnpm キャッシュで依存関係インストールを高速化
+- ✅ **失敗時の対応**: リトライ、ロールバック、通知
 
-#### デプロイ
-
-- `id-token: write` - OIDC認証
-- `contents: read` - コードの読み取り
-
-### 3. トリガーイベント
-
-イベントを使い分けることで、開発フェーズとワークフローの動作をマッチさせます：
-
-- `pull_request`: PR作成時 → テスト実行
-- `push`: mainブランチへのマージ → デプロイ実行
-- `workflow_dispatch`: 手動実行 → 任意のタイミングで実行
-
-### 4. ジョブの依存関係
-
-`needs`キーワードでジョブの実行順序を制御：
-
-```yaml
-jobs:
-  test:
-    runs-on: ubuntu-latest
-    # ...
-
-  deploy:
-    needs: test # testジョブが成功したら実行
-    runs-on: ubuntu-latest
-    # ...
-```
+詳細は [GitHub Actions コンセプト](docs/github-actions-concept.md) を参照してください。
 
 ## コスト最適化
 
@@ -292,31 +262,67 @@ pnpm test
 pnpm run ssg
 ```
 
-## トラブルシューティング
+## 🔧 トラブルシューティング
 
-### Terraform apply が失敗する
+詳細なトラブルシューティングは [運用手引書](docs/operations-guide.md#トラブルシューティング) を参照してください。
 
-- IAMロールの権限が不足している可能性があります
-- S3バケット名が既に使用されている可能性があります
+### よくある問題
 
-### デプロイは成功するがサイトにアクセスできない
+**Q: デプロイが失敗する**
+A: ワークフローのログを確認してください:
 
-- S3バケットのパブリックアクセス設定を確認してください
-- バケットポリシーが正しく設定されているか確認してください
+```bash
+gh run list --workflow=deploy.yml --limit 3
+gh run view <run-id> --log-failed
+```
 
-### OIDC認証エラー
+**Q: Terraform state lock エラー**
+A: DynamoDB のロックを削除してください:
 
-- GitHub Secretsに正しいIAMロールARNが設定されているか確認してください
-- IAMロールの信頼ポリシーでリポジトリ名が正しく指定されているか確認してください
+```bash
+aws dynamodb delete-item \
+  --table-name terraform-state-lock \
+  --key '{"LockID":{"S":"651783364218-github-actions-tf-state/leap-year-app/terraform.tfstate"}}'
+```
 
-## 参考リンク
+**Q: PR Check が失敗する**
+A: ローカルで修正してから再プッシュ:
 
-- [GitHub Actions ドキュメント](https://docs.github.com/en/actions)
+```bash
+pnpm run format        # フォーマット修正
+pnpm run lint          # リンター確認
+pnpm test              # テスト実行
+```
+
+## 🔗 参考リンク
+
+### プロジェクトドキュメント
+
+- [運用手引書](docs/operations-guide.md) - 推奨
+- [AWS OIDC セットアップ](docs/aws-oidc-setup.md)
+- [Terraform Backend セットアップ](docs/terraform-backend-setup.md)
+- [GitHub Actions コンセプト](docs/github-actions-concept.md)
+
+### 外部リソース
+
+- [GitHub Actions ドキュメント](https://docs.github.com/ja/actions)
+- [GitHub Actions OIDC](https://docs.github.com/en/actions/deployment/security-hardening-your-deployments/configuring-openid-connect-in-amazon-web-services)
 - [Terraform AWS Provider](https://registry.terraform.io/providers/hashicorp/aws/latest/docs)
 - [Hono ドキュメント](https://hono.dev/)
-- [AWS Lambda](https://aws.amazon.com/lambda/)
-- [GitHub Actions OIDC](https://docs.github.com/en/actions/deployment/security-hardening-your-deployments/configuring-openid-connect-in-amazon-web-services)
+- [AWS Lambda](https://aws.amazon.com/jp/lambda/)
+- [Vitest](https://vitest.dev/)
 
-## ライセンス
+## 📊 プロジェクト統計
+
+- **ワークフロー**: 4 個（PR Check、Deploy、Setup Backend、Destroy）
+- **テスト**: 34 個（すべて成功）
+- **デプロイ時間**: 約 1 分 30 秒
+- **AWS リソース**: S3、Lambda、API Gateway、DynamoDB、IAM
+
+## 📝 ライセンス
 
 MIT
+
+---
+
+**開発者向けガイド**: このプロジェクトを実際に運用する場合は、必ず [運用手引書](docs/operations-guide.md) を確認してください。
