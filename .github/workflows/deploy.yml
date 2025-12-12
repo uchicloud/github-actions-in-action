@@ -129,12 +129,11 @@ jobs:
 
       - name: S3への同期
         run: |
-          aws s3 sync dist/ s3://${{ needs.deploy-infrastructure.outputs.website_bucket }}/ \
+          aws s3 sync dist/ s3://${{ secrets.WEBSITE_BUCKET_NAME }}/ \
             --delete \
             --cache-control "public, max-age=3600"
 
       - name: デプロイ完了
         run: |
           echo "✅ デプロイが完了しました！"
-          echo "🌐 ウェブサイト: http://${{ needs.deploy-infrastructure.outputs.website_bucket }}.s3-website-${{ env.AWS_REGION }}.amazonaws.com"
-          echo "🔗 API: ${{ needs.deploy-infrastructure.outputs.api_endpoint }}"
+          echo "🌐 ウェブサイト: http://${{ secrets.WEBSITE_BUCKET_NAME }}.s3-website-${{ env.AWS_REGION }}.amazonaws.com"
