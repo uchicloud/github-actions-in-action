@@ -1,0 +1,49 @@
+# 基本的なGitHub Actionsワークフロー
+# このワークフローはGitHub Actionsの基本構造を学ぶためのものです
+
+name: 01 - Basic Workflow
+
+# ワークフローをトリガーするイベント
+# mainブランチへのpushで実行されます
+on:
+  push:
+    branches: [main]
+  # 手動実行も可能にする
+  workflow_dispatch:
+
+# ジョブの定義
+jobs:
+  # ジョブ名: hello-world
+  hello-world:
+    # 実行環境を指定（Ubuntu最新版）
+    runs-on: ubuntu-latest
+
+    # ステップの定義
+    steps:
+      # ステップ1: 挨拶を表示
+      - name: 挨拶を表示
+        run: echo "Hello, GitHub Actions!"
+
+      # ステップ2: 日付を表示
+      - name: 現在の日時を表示
+        run: date
+
+      # ステップ3: 環境情報を表示
+      - name: 環境情報を表示
+        run: |
+          echo "Runner OS: ${{ runner.os }}"
+          echo "Repository: ${{ github.repository }}"
+          echo "Branch: ${{ github.ref }}"
+          echo "Event: ${{ github.event_name }}"
+
+      # ステップ4: シェルコマンドを実行
+      - name: システム情報を表示
+        run: |
+          echo "=== システム情報 ==="
+          uname -a
+          echo ""
+          echo "=== ディスク使用状況 ==="
+          df -h
+          echo ""
+          echo "=== メモリ情報 ==="
+          free -h

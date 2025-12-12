@@ -1,0 +1,110 @@
+# プルリクエスト時の自動チェック
+# - コードフォーマット確認
+# - リンター実行
+# - ユニットテスト実行
+
+name: PR Check
+
+on:
+  pull_request:
+    branches: [main]
+
+# 最小限の権限
+permissions:
+  contents: read # リポジトリの内容を読む
+  pull-requests: write # PRにコメントを書く
+
+jobs:
+  # コード品質チェック
+  quality-check:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: コードのチェックアウト
+        uses: actions/checkout@v4
+
+      - name: pnpmのセットアップ
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Node.jsのセットアップ
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+
+      - name: 依存関係のインストール
+        run: pnpm install --frozen-lockfile
+
+      - name: コードフォーマットの確認
+        run: pnpm run format:check
+
+      - name: リンターの実行
+        run: pnpm run lint
+
+  # テストの実行
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: コードのチェックアウト
+        uses: actions/checkout@v4
+
+      - name: pnpmのセットアップ
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Node.jsのセットアップ
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+
+      - name: 依存関係のインストール
+        run: pnpm install --frozen-lockfile
+
+      - name: ユニットテストの実行
+        run: pnpm test
+
+  # ビルドの確認
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: コードのチェックアウト
+        uses: actions/checkout@v4
+
+      - name: pnpmのセットアップ
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Node.jsのセットアップ
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+
+      - name: 依存関係のインストール
+        run: pnpm install --frozen-lockfile
+
+      - name: 静的サイトの生成
+        run: pnpm run ssg
+
+      - name: ビルド成果物のアップロード
+        uses: actions/upload-artifact@v4
+        with:
+          name: static-site
+          path: dist/
+          retention-days: 7
+
+  # すべてのチェックが成功したことを確認
+  all-checks-passed:
+    runs-on: ubuntu-latest
+    needs: [quality-check, test, build]
+
+    steps:
+      - name: すべてのチェックが完了
+        run: echo "✅ すべてのチェックが正常に完了しました！"

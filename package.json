@@ -1,0 +1,39 @@
+{
+  "name": "github-actions-in-action",
+  "version": "1.0.0",
+  "description": "うるう年判定ウェブアプリ - GitHub Actions学習プロジェクト",
+  "type": "module",
+  "packageManager": "pnpm@9.0.0",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "lint": "eslint .",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "ssg": "tsx frontend/ssg.ts"
+  },
+  "keywords": [
+    "github-actions",
+    "ci-cd",
+    "hono",
+    "lambda",
+    "terraform"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "hono": "^4.0.0"
+  },
+  "devDependencies": {
+    "@hono/vite-dev-server": "^0.15.0",
+    "@types/node": "^20.0.0",
+    "eslint": "^9.0.0",
+    "prettier": "^3.0.0",
+    "tsx": "^4.0.0",
+    "vite": "^5.0.0",
+    "vitest": "^1.0.0"
+  }
+}
