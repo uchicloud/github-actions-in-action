@@ -1,0 +1,72 @@
+# AWSリソースを削除するワークフロー
+# 手動実行専用
+
+name: Destroy AWS Resources
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirm:
+        description: '本当に削除しますか？ "destroy" と入力してください'
+        required: true
+        default: ''
+
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  AWS_REGION: ap-northeast-1
+
+jobs:
+  destroy:
+    runs-on: ubuntu-latest
+    if: github.event.inputs.confirm == 'destroy'
+
+    steps:
+      - name: ⚠️ 削除確認
+        run: |
+          echo "⚠️  警告: すべてのAWSリソースを削除します"
+          echo "📦 S3バケット: ${{ secrets.WEBSITE_BUCKET_NAME }}"
+          echo "⚡ Lambda関数: leap-year-checker-api"
+          echo "🌐 API Gateway: leap-year-checker-api"
+          echo "🔐 IAMロール: leap-year-checker-lambda-role"
+
+      - name: AWS認証（OIDC）
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: 🧹 S3バケットを削除
+        run: |
+          aws s3 rb s3://${{ secrets.WEBSITE_BUCKET_NAME }} --force 2>/dev/null || echo "S3バケットが見つかりません"
+
+      - name: ⚡ Lambda関数を削除
+        run: |
+          aws lambda delete-function --function-name leap-year-checker-api 2>/dev/null || echo "Lambda関数が見つかりません"
+
+      - name: 🌐 API Gatewayを削除
+        run: |
+          API_ID=$(aws apigatewayv2 get-apis --query 'Items[?Name==`leap-year-checker-api`].ApiId' --output text 2>/dev/null)
+          if [ ! -z "$API_ID" ]; then
+            aws apigatewayv2 delete-api --api-id $API_ID
+            echo "✅ API Gateway削除完了"
+          else
+            echo "API Gatewayが見つかりません"
+          fi
+
+      - name: 🔐 IAMロールポリシーをデタッチ
+        run: |
+          aws iam detach-role-policy \
+            --role-name leap-year-checker-lambda-role \
+            --policy-arn arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole 2>/dev/null || echo "ポリシーが見つかりません"
+
+      - name: 🔐 IAMロールを削除
+        run: |
+          aws iam delete-role --role-name leap-year-checker-lambda-role 2>/dev/null || echo "IAMロールが見つかりません"
+
+      - name: ✅ クリーンアップ完了
+        run: |
+          echo "✅ すべてのAWSリソースを削除しました"
+          echo "次回のデプロイでクリーンな状態から開始できます"
