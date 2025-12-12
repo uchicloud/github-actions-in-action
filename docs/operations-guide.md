@@ -335,6 +335,25 @@ aws apigatewayv2 get-apis
 
 長期クレデンシャル（Access Key / Secret Key）は使用せず、OIDC を使用した一時的な認証情報を使用しています。
 
+### IAM ロールの必要な権限
+
+`GitHubActionsDeployRole` には以下のポリシーがアタッチされています：
+
+- **S3 関連**: S3 バケットの作成・管理、オブジェクトのアップロード
+- **Lambda 関連**: Lambda 関数の作成・更新、実行ロールの管理
+- **API Gateway 関連**: API Gateway の作成・設定
+- **IAM 関連**: Lambda 実行ロール、ポリシーの作成・管理
+- **Terraform State 管理**: S3 state バケット、DynamoDB state lock テーブルへのアクセス
+- **CloudWatch Logs**: ロググループの作成・管理（`CloudWatchLogsFullAccess` または同等の権限）
+
+CloudWatch Logs 権限が不足している場合、以下のコマンドで追加できます：
+
+```bash
+aws iam attach-role-policy \
+  --role-name GitHubActionsDeployRole \
+  --policy-arn arn:aws:iam::aws:policy/CloudWatchLogsFullAccess
+```
+
 ## ベストプラクティス
 
 ### コミットメッセージ
