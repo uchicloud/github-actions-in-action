@@ -9,6 +9,11 @@ name: Deploy to AWS
 on:
   push:
     branches: [main]
+    paths-ignore:
+      - 'docs/**'
+      - '**.md'
+      - '.github/workflows/setup-backend.yml'
+      - '.github/workflows/destroy.yml'
   # 手動実行も可能
   workflow_dispatch:
 

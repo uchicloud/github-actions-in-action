@@ -8,6 +8,9 @@ name: PR Check
 on:
   pull_request:
     branches: [main]
+    paths-ignore:
+      - 'docs/**'
+      - '**.md'
 
 # 最小限の権限
 permissions:
