@@ -106,6 +106,7 @@ resource "aws_iam_role_policy_attachment" "lambda_basic" {
 }
 
 # Lambda用のCloudWatch Logsグループ
+# Lambda関数のログを7日間保持
 resource "aws_cloudwatch_log_group" "lambda" {
   name              = "/aws/lambda/${var.app_name}-api"
   retention_in_days = 7
