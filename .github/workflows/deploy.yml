@@ -29,7 +29,7 @@ env:
 jobs:
   # デプロイ前のテスト
   pre-deploy-test:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-slim
 
     steps:
       - name: コードのチェックアウト
@@ -52,7 +52,7 @@ jobs:
 
   # インフラのデプロイ
   deploy-infrastructure:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-slim
     needs: pre-deploy-test
 
     # Terraform outputsを他のジョブで使用できるようにする
@@ -104,7 +104,7 @@ jobs:
 
   # 静的サイトのビルドとデプロイ
   deploy-website:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-slim
     needs: deploy-infrastructure
 
     steps:
