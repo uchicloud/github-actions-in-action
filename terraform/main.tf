@@ -99,10 +99,21 @@ resource "aws_iam_role" "lambda_role" {
   }
 }
 
-# Lambda基本実行ロールのアタッチ
+# Lambda基本実行ロールのアタッチ（CloudWatch Logs書き込み権限を含む）
 resource "aws_iam_role_policy_attachment" "lambda_basic" {
   role       = aws_iam_role.lambda_role.name
   policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+}
+
+# Lambda用のCloudWatch Logsグループ
+resource "aws_cloudwatch_log_group" "lambda" {
+  name              = "/aws/lambda/${var.app_name}-api"
+  retention_in_days = 7
+
+  tags = {
+    Name        = "${var.app_name}-lambda-logs"
+    Environment = var.environment
+  }
 }
 
 # Lambda関数用のZIPファイルを作成（placeholder）
@@ -132,6 +143,12 @@ resource "aws_lambda_function" "api" {
     Name        = "${var.app_name}-api"
     Environment = var.environment
   }
+
+  # CloudWatch Logsグループが先に作成されるようにする
+  depends_on = [
+    aws_cloudwatch_log_group.lambda,
+    aws_iam_role_policy_attachment.lambda_basic
+  ]
 }
 
 # API Gateway (HTTP API)
@@ -167,16 +184,44 @@ resource "aws_apigatewayv2_route" "api" {
   target    = "integrations/${aws_apigatewayv2_integration.lambda.id}"
 }
 
-# API Gatewayステージ
+# API Gateway用のCloudWatch Logsグループ
+resource "aws_cloudwatch_log_group" "api_gateway" {
+  name              = "/aws/apigateway/${var.app_name}-api"
+  retention_in_days = 7
+
+  tags = {
+    Name        = "${var.app_name}-apigateway-logs"
+    Environment = var.environment
+  }
+}
+
+# API Gatewayステージ（ログ設定を含む）
 resource "aws_apigatewayv2_stage" "api" {
   api_id      = aws_apigatewayv2_api.api.id
   name        = "$default"
   auto_deploy = true
 
+  access_log_settings {
+    destination_arn = aws_cloudwatch_log_group.api_gateway.arn
+    format = jsonencode({
+      requestId      = "$context.requestId"
+      ip             = "$context.identity.sourceIp"
+      requestTime    = "$context.requestTime"
+      httpMethod     = "$context.httpMethod"
+      routeKey       = "$context.routeKey"
+      status         = "$context.status"
+      protocol       = "$context.protocol"
+      responseLength = "$context.responseLength"
+      errorMessage   = "$context.error.message"
+    })
+  }
+
   tags = {
     Name        = "${var.app_name}-api-stage"
     Environment = var.environment
   }
+
+  depends_on = [aws_cloudwatch_log_group.api_gateway]
 }
 
 # LambdaにAPI Gatewayからの実行権限を付与
