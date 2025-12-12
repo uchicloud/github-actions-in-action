@@ -124,6 +124,8 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: 静的サイトの生成
+        env:
+          VITE_API_URL: ${{ needs.deploy-infrastructure.outputs.api_endpoint }}
         run: pnpm run ssg
 
       - name: AWS認証（OIDC）

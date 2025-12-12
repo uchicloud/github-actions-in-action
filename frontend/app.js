@@ -315,19 +315,34 @@ function checkerContent() {
         }
 
         try {
-          // ローカル判定（本番環境ではAPI URLを設定）
-          const apiUrl = window.location.hostname === 'localhost'
-            ? '/api/leap-year'  // 開発環境
-            : 'YOUR_API_GATEWAY_URL';  // 本番環境
+          // 本番環境のAPI URLが設定されている場合はAPIを呼び出す
+          if (window.API_URL) {
+            const response = await fetch(\`\${window.API_URL}?year=\${year}\`);
 
-          const isLeap = checkLeapYearLocal(parseInt(year));
-          const reason = getReasonLocal(parseInt(year));
+            if (!response.ok) {
+              throw new Error(\`API error: \${response.status}\`);
+            }
 
-          resultDiv.className = isLeap ? 'success' : 'info';
-          resultDiv.innerHTML = \`
-            <h3>\${year}年は\${isLeap ? 'うるう年です！ 🎉' : 'うるう年ではありません'}</h3>
-            <p>\${reason}</p>
-          \`;
+            const data = await response.json();
+
+            resultDiv.className = data.isLeapYear ? 'success' : 'info';
+            resultDiv.innerHTML = \`
+              <h3>\${year}年は\${data.isLeapYear ? 'うるう年です！ 🎉' : 'うるう年ではありません'}</h3>
+              <p>\${data.reason}</p>
+              <p style="margin-top: 10px; font-size: 0.9em; opacity: 0.7;">✅ Lambda APIで判定</p>
+            \`;
+          } else {
+            // ローカル環境ではローカル関数を使用
+            const isLeap = checkLeapYearLocal(parseInt(year));
+            const reason = getReasonLocal(parseInt(year));
+
+            resultDiv.className = isLeap ? 'success' : 'info';
+            resultDiv.innerHTML = \`
+              <h3>\${year}年は\${isLeap ? 'うるう年です！ 🎉' : 'うるう年ではありません'}</h3>
+              <p>\${reason}</p>
+              <p style="margin-top: 10px; font-size: 0.9em; opacity: 0.7;">⚠️ ローカル判定（開発モード）</p>
+            \`;
+          }
         } catch (error) {
           resultDiv.className = 'error';
           resultDiv.innerHTML = 'エラーが発生しました: ' + error.message;

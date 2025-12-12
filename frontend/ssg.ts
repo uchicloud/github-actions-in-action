@@ -20,12 +20,27 @@ async function generateStaticSite() {
 
   console.log('🚀 静的サイトを生成中...\n');
 
+  // API URLを環境変数から取得
+  const apiUrl = process.env.VITE_API_URL || '';
+  console.log(`🔗 API URL: ${apiUrl || '(ローカル開発モード)'}\n`);
+
   // 各ページを生成
   for (const page of pages) {
     try {
       const req = new Request(`http://localhost${page.path}`);
       const res = await app.fetch(req);
-      const html = await res.text();
+      let html = await res.text();
+
+      // API URLを注入（本番環境の場合）
+      if (apiUrl) {
+        const configScript = `
+  <script>
+    // API Gateway URL（ビルド時に注入）
+    window.API_URL = '${apiUrl}';
+  </script>`;
+        // </head>の直前に挿入
+        html = html.replace('</head>', `${configScript}\n</head>`);
+      }
 
       const outputPath = join(distDir, page.filename);
       // サブディレクトリを作成
