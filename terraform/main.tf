@@ -8,12 +8,14 @@ terraform {
     }
   }
 
-  # S3バックエンド（オプション）
-  # backend "s3" {
-  #   bucket = "your-terraform-state-bucket"
-  #   key    = "leap-year-app/terraform.tfstate"
-  #   region = "ap-northeast-1"
-  # }
+  # S3バックエンド（Terraform state管理）
+  backend "s3" {
+    bucket         = "651783364218-github-actions-tf-state"
+    key            = "leap-year-app/terraform.tfstate"
+    region         = "ap-northeast-1"
+    dynamodb_table = "terraform-state-lock"
+    encrypt        = true
+  }
 }
 
 provider "aws" {
