@@ -14,8 +14,8 @@ async function generateStaticSite() {
   // 生成するページのリスト
   const pages = [
     { path: '/', filename: 'index.html' },
-    { path: '/checker', filename: 'checker.html' },
-    { path: '/about', filename: 'about.html' },
+    { path: '/checker', filename: 'checker/index.html' },
+    { path: '/about', filename: 'about/index.html' },
   ];
 
   console.log('🚀 静的サイトを生成中...\n');
@@ -28,6 +28,10 @@ async function generateStaticSite() {
       const html = await res.text();
 
       const outputPath = join(distDir, page.filename);
+      // サブディレクトリを作成
+      await mkdir(join(distDir, page.filename.split('/').slice(0, -1).join('/')), {
+        recursive: true,
+      });
       await writeFile(outputPath, html, 'utf-8');
 
       console.log(`✅ ${page.path} → ${page.filename}`);
