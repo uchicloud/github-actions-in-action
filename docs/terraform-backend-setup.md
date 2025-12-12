@@ -1,157 +1,74 @@
 # Terraform Backend セットアップガイド
 
-TerraformのstateファイルをS3に保存し、複数人での開発やCI/CDでの継続的な管理を可能にします。
+TerraformのstateファイルをS3に保存し、GitHub Actionsでの継続的なインフラ管理を可能にします。
 
 ## 前提条件
 
 - ✅ S3バケット作成済み: `651783364218-github-actions-tf-state`
-- ⚠️ DynamoDBテーブル作成が必要
+- ✅ GitHub ActionsのOIDC認証設定済み
 
-## セットアップ手順
+## セットアップ手順（すべてGitHub Actionsで実行）
 
-### 1. DynamoDBテーブルの作成（state locking用）
+### ステップ1: Backend セットアップワークフローを実行
 
-Terraform state lockingのためのDynamoDBテーブルを作成します。
+一度だけ実行して、必要なAWSリソースを作成します。
 
-```bash
-aws dynamodb create-table \
-  --table-name terraform-state-lock \
-  --attribute-definitions AttributeName=LockID,AttributeType=S \
-  --key-schema AttributeName=LockID,KeyType=HASH \
-  --billing-mode PAY_PER_REQUEST \
-  --region ap-northeast-1
-```
+#### GitHub UIから実行
 
-確認：
-```bash
-aws dynamodb describe-table \
-  --table-name terraform-state-lock \
-  --region ap-northeast-1 \
-  --query 'Table.TableStatus'
-```
+1. GitHubリポジトリの **Actions** タブを開く
+2. 左サイドバーから **Setup Terraform Backend** を選択
+3. **Run workflow** をクリック
+4. **Run workflow** で実行
 
-### 2. IAMロールに必要な権限を追加
-
-GitHub ActionsのIAMロールに、S3とDynamoDBへのアクセス権限を追加します。
-
-#### S3アクセス権限（state管理用）
-
-```json
-{
-  "Version": "2012-10-17",
-  "Statement": [
-    {
-      "Effect": "Allow",
-      "Action": [
-        "s3:GetObject",
-        "s3:PutObject",
-        "s3:DeleteObject"
-      ],
-      "Resource": "arn:aws:s3:::651783364218-github-actions-tf-state/*"
-    },
-    {
-      "Effect": "Allow",
-      "Action": "s3:ListBucket",
-      "Resource": "arn:aws:s3:::651783364218-github-actions-tf-state"
-    }
-  ]
-}
-```
-
-#### DynamoDBアクセス権限（state locking用）
-
-```json
-{
-  "Version": "2012-10-17",
-  "Statement": [
-    {
-      "Effect": "Allow",
-      "Action": [
-        "dynamodb:DescribeTable",
-        "dynamodb:GetItem",
-        "dynamodb:PutItem",
-        "dynamodb:DeleteItem"
-      ],
-      "Resource": "arn:aws:dynamodb:ap-northeast-1:651783364218:table/terraform-state-lock"
-    }
-  ]
-}
-```
-
-#### AWS CLIでポリシーを追加
+#### CLIから実行
 
 ```bash
-# ポリシーJSONファイルを作成
-cat > terraform-backend-policy.json <<'EOF'
-{
-  "Version": "2012-10-17",
-  "Statement": [
-    {
-      "Sid": "TerraformStateS3Access",
-      "Effect": "Allow",
-      "Action": [
-        "s3:GetObject",
-        "s3:PutObject",
-        "s3:DeleteObject",
-        "s3:ListBucket"
-      ],
-      "Resource": [
-        "arn:aws:s3:::651783364218-github-actions-tf-state",
-        "arn:aws:s3:::651783364218-github-actions-tf-state/*"
-      ]
-    },
-    {
-      "Sid": "TerraformStateLockDynamoDB",
-      "Effect": "Allow",
-      "Action": [
-        "dynamodb:DescribeTable",
-        "dynamodb:GetItem",
-        "dynamodb:PutItem",
-        "dynamodb:DeleteItem"
-      ],
-      "Resource": "arn:aws:dynamodb:ap-northeast-1:651783364218:table/terraform-state-lock"
-    }
-  ]
-}
-EOF
+gh workflow run setup-backend.yml
 
-# ポリシーを作成
-aws iam create-policy \
-  --policy-name TerraformBackendAccess \
-  --policy-document file://terraform-backend-policy.json
-
-# GitHubActionsロールにアタッチ
-aws iam attach-role-policy \
-  --role-name GitHubActionsDeployRole \
-  --policy-arn arn:aws:iam::651783364218:policy/TerraformBackendAccess
+# 実行状況を確認
+gh run watch
 ```
 
-### 3. 既存リソースのクリーンアップ
+このワークフローは以下を自動的に作成します：
 
-既存のAWSリソースを削除してから、新しいbackend設定でデプロイします。
+- ✅ **DynamoDBテーブル**: `terraform-state-lock` (state locking用)
+- ✅ **IAMポリシー**: `TerraformBackendAccess` (S3/DynamoDB権限)
+- ✅ **ポリシーアタッチ**: GitHubActionsロールに追加
+- ✅ **S3バージョニング**: 有効化
+
+### ステップ2: 既存リソースのクリーンアップ
+
+既存のAWSリソースを削除して、クリーンな状態から開始します。
+
+#### GitHub UIから実行
+
+1. **Actions** → **Destroy AWS Resources**
+2. **Run workflow**
+3. 確認フィールドに `destroy` と入力
+4. **Run workflow** で実行
+
+#### CLIから実行
 
 ```bash
-# GitHub UIから Destroy ワークフローを実行
-# または
 gh workflow run destroy.yml -f confirm=destroy
 
 # 完了を確認
 gh run list --workflow=destroy.yml --limit 1
 ```
 
-### 4. 再デプロイ
+### ステップ3: 再デプロイ
 
-backend設定を有効化した状態で再デプロイします。
+mainブランチへのpushで、S3 backendを使用した新しいデプロイが自動実行されます。
 
 ```bash
-git add terraform/main.tf docs/terraform-backend-setup.md
-git commit -m "feat: enable S3 backend for Terraform state management"
 git push origin main
 ```
 
+デプロイワークフローが正常に完了すれば、Terraform stateがS3に保存されます。
+
 ## Backend設定の詳細
 
-`terraform/main.tf`のbackend設定：
+### terraform/main.tf
 
 ```hcl
 terraform {
@@ -189,7 +106,25 @@ DynamoDBテーブルを使用してstate lockingを実装します：
 
 3. **実行完了後**
    - ロックを解放
-   - 他の実行が可能に
+   - 次の実行が可能に
+
+## 作成されるAWSリソース
+
+### Setup Backend ワークフローで作成
+
+| リソース | 名前 | 用途 |
+|---------|------|------|
+| DynamoDBテーブル | `terraform-state-lock` | State locking |
+| IAMポリシー | `TerraformBackendAccess` | S3/DynamoDB権限 |
+
+### Deploy ワークフローで作成
+
+| リソース | 名前 | 用途 |
+|---------|------|------|
+| S3バケット | `$WEBSITE_BUCKET_NAME` | 静的サイトホスティング |
+| Lambda関数 | `leap-year-checker-api` | うるう年判定API |
+| API Gateway | `leap-year-checker-api` | HTTPエンドポイント |
+| IAMロール | `leap-year-checker-lambda-role` | Lambda実行ロール |
 
 ## トラブルシューティング
 
@@ -198,11 +133,9 @@ DynamoDBテーブルを使用してstate lockingを実装します：
 **原因**: 前回の実行が異常終了し、ロックが残っている
 
 **解決方法**:
-```bash
-# ロックを強制解除（慎重に！）
-terraform force-unlock <LOCK_ID>
 
-# またはDynamoDBテーブルから直接削除
+```bash
+# DynamoDBのロックを手動削除
 aws dynamodb delete-item \
   --table-name terraform-state-lock \
   --key '{"LockID":{"S":"651783364218-github-actions-tf-state/leap-year-app/terraform.tfstate"}}'
@@ -212,64 +145,37 @@ aws dynamodb delete-item \
 
 **原因**: IAMロールに権限が不足
 
-**解決方法**: 上記の手順2でポリシーを追加
+**解決方法**: Setup Backend ワークフローを再実行
 
 ### Backend初期化エラー
 
-**原因**: 既存のローカルstateとの競合
+**原因**: 既存リソースとの競合
 
-**解決方法**:
-```bash
-cd terraform
-rm -rf .terraform
-terraform init -reconfigure
-```
+**解決方法**: Destroyワークフローで既存リソースを削除してから再デプロイ
 
-## ベストプラクティス
+## S3 Backend の利点
 
-### 1. バケットのバージョニング有効化
+### Before（ローカルstate）❌
 
-```bash
-aws s3api put-bucket-versioning \
-  --bucket 651783364218-github-actions-tf-state \
-  --versioning-configuration Status=Enabled
-```
+- ❌ stateファイルがGitHub Actions実行ごとに消失
+- ❌ 既存リソースを認識できない
+- ❌ `terraform destroy`が使えない
+- ❌ チーム開発不可能
 
-誤削除時に過去バージョンから復元可能になります。
+### After（S3 backend）✅
 
-### 2. バケットの暗号化確認
-
-```bash
-aws s3api get-bucket-encryption \
-  --bucket 651783364218-github-actions-tf-state
-```
-
-### 3. ライフサイクルポリシー設定（オプション）
-
-古いstateファイルのバージョンを自動削除：
-
-```json
-{
-  "Rules": [
-    {
-      "Id": "DeleteOldVersions",
-      "Status": "Enabled",
-      "NoncurrentVersionExpiration": {
-        "NoncurrentDays": 90
-      }
-    }
-  ]
-}
-```
+- ✅ **stateファイルが永続化**
+- ✅ **既存リソースを正しく認識**
+- ✅ **terraform destroy が正常動作**
+- ✅ **State locking**で同時実行を防止
+- ✅ **バージョン管理**で履歴追跡
+- ✅ **暗号化**でセキュア
+- ✅ **すべてGitHub Actionsで完結**
 
 ## まとめ
 
-S3 backendを使用することで：
+1. **Setup Backend** ワークフローを一度実行
+2. **Destroy** ワークフローで既存リソースをクリーンアップ
+3. **Deploy** ワークフローが自動実行され、stateがS3に保存される
 
-- ✅ **チーム開発**: 複数人で同じstateを共有
-- ✅ **継続的デプロイ**: CI/CDでの安定した運用
-- ✅ **State locking**: 同時実行による競合を防止
-- ✅ **バージョン管理**: stateの履歴を追跡
-- ✅ **暗号化**: セキュアなstate管理
-
-が可能になります。
+以降のデプロイでは、stateファイルが永続化されているため、インフラの変更管理が正しく動作します。
