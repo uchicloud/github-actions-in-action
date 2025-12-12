@@ -84,13 +84,13 @@ terraform {
 
 ### パラメータの説明
 
-| パラメータ | 値 | 説明 |
-|-----------|-----|------|
-| `bucket` | `651783364218-github-actions-tf-state` | stateファイルを保存するS3バケット |
-| `key` | `leap-year-app/terraform.tfstate` | バケット内のstateファイルパス |
-| `region` | `ap-northeast-1` | S3バケットのリージョン |
-| `dynamodb_table` | `terraform-state-lock` | state lockingに使用するテーブル |
-| `encrypt` | `true` | stateファイルの暗号化 |
+| パラメータ       | 値                                     | 説明                              |
+| ---------------- | -------------------------------------- | --------------------------------- |
+| `bucket`         | `651783364218-github-actions-tf-state` | stateファイルを保存するS3バケット |
+| `key`            | `leap-year-app/terraform.tfstate`      | バケット内のstateファイルパス     |
+| `region`         | `ap-northeast-1`                       | S3バケットのリージョン            |
+| `dynamodb_table` | `terraform-state-lock`                 | state lockingに使用するテーブル   |
+| `encrypt`        | `true`                                 | stateファイルの暗号化             |
 
 ## State Lockingの仕組み
 
@@ -112,19 +112,19 @@ DynamoDBテーブルを使用してstate lockingを実装します：
 
 ### Setup Backend ワークフローで作成
 
-| リソース | 名前 | 用途 |
-|---------|------|------|
-| DynamoDBテーブル | `terraform-state-lock` | State locking |
-| IAMポリシー | `TerraformBackendAccess` | S3/DynamoDB権限 |
+| リソース         | 名前                     | 用途            |
+| ---------------- | ------------------------ | --------------- |
+| DynamoDBテーブル | `terraform-state-lock`   | State locking   |
+| IAMポリシー      | `TerraformBackendAccess` | S3/DynamoDB権限 |
 
 ### Deploy ワークフローで作成
 
-| リソース | 名前 | 用途 |
-|---------|------|------|
-| S3バケット | `$WEBSITE_BUCKET_NAME` | 静的サイトホスティング |
-| Lambda関数 | `leap-year-checker-api` | うるう年判定API |
-| API Gateway | `leap-year-checker-api` | HTTPエンドポイント |
-| IAMロール | `leap-year-checker-lambda-role` | Lambda実行ロール |
+| リソース    | 名前                            | 用途                   |
+| ----------- | ------------------------------- | ---------------------- |
+| S3バケット  | `$WEBSITE_BUCKET_NAME`          | 静的サイトホスティング |
+| Lambda関数  | `leap-year-checker-api`         | うるう年判定API        |
+| API Gateway | `leap-year-checker-api`         | HTTPエンドポイント     |
+| IAMロール   | `leap-year-checker-lambda-role` | Lambda実行ロール       |
 
 ## トラブルシューティング
 
