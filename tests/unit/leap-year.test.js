@@ -124,7 +124,9 @@ describe('getLeapYearsInRange', () => {
   });
 
   test('無効な範囲: 開始年 > 終了年', () => {
-    assert.throws(() => getLeapYearsInRange(2024, 2020), { message: '開始年は終了年以下である必要があります' });
+    assert.throws(() => getLeapYearsInRange(2024, 2020), {
+      message: '開始年は終了年以下である必要があります',
+    });
   });
 
   test('21世紀前半のうるう年', () => {
