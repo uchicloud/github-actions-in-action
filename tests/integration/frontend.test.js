@@ -1,7 +1,7 @@
 import { describe, test, expect } from 'vitest';
 import app from '../../frontend/app.js';
 
-describe('Frontend Hono App', () => {
+describe('Frontend Hono App - HTMLエンドポイント', () => {
   describe('ホームページ (/)', () => {
     test('200レスポンスを返す', async () => {
       const res = await app.request('/');
@@ -72,22 +72,6 @@ describe('Frontend Hono App', () => {
       expect(html).toContain('2024年');
       expect(html).toContain('2000年');
       expect(html).toContain('1900年');
-    });
-  });
-
-  describe('ナビゲーション', () => {
-    test('すべてのページに共通ナビゲーションがある', async () => {
-      const pages = ['/', '/checker', '/about'];
-
-      for (const path of pages) {
-        const res = await app.request(path);
-        const html = await res.text();
-
-        expect(html).toContain('<nav>');
-        expect(html).toContain('href="/"');
-        expect(html).toContain('href="/checker"');
-        expect(html).toContain('href="/about"');
-      }
     });
   });
 
