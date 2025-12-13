@@ -1,4 +1,5 @@
-import { describe, test, expect } from 'vitest';
+import { describe, test } from 'node:test';
+import assert from 'node:assert';
 import { handler } from '../../lambda/handler.js';
 
 describe('Lambda Handler', () => {
@@ -15,10 +16,10 @@ describe('Lambda Handler', () => {
       const response = await handler(event);
       const body = JSON.parse(response.body);
 
-      expect(response.statusCode).toBe(200);
-      expect(body.year).toBe(2024);
-      expect(body.isLeapYear).toBe(true);
-      expect(body.reason).toContain('うるう年です');
+      assert.strictEqual(response.statusCode, 200);
+      assert.strictEqual(body.year, 2024);
+      assert.strictEqual(body.isLeapYear, true);
+      assert.ok(body.reason.includes('うるう年です'));
     });
 
     test('うるう年ではない年を判定', async () => {
@@ -33,10 +34,10 @@ describe('Lambda Handler', () => {
       const response = await handler(event);
       const body = JSON.parse(response.body);
 
-      expect(response.statusCode).toBe(200);
-      expect(body.year).toBe(2023);
-      expect(body.isLeapYear).toBe(false);
-      expect(body.reason).toContain('うるう年ではありません');
+      assert.strictEqual(response.statusCode, 200);
+      assert.strictEqual(body.year, 2023);
+      assert.strictEqual(body.isLeapYear, false);
+      assert.ok(body.reason.includes('うるう年ではありません'));
     });
 
     test('yearパラメータがない場合はエラー', async () => {
@@ -49,8 +50,8 @@ describe('Lambda Handler', () => {
       const response = await handler(event);
       const body = JSON.parse(response.body);
 
-      expect(response.statusCode).toBe(400);
-      expect(body.error).toBeDefined();
+      assert.strictEqual(response.statusCode, 400);
+      assert.ok(body.error !== undefined);
     });
 
     test('yearが数値でない場合はエラー', async () => {
@@ -64,7 +65,7 @@ describe('Lambda Handler', () => {
 
       const response = await handler(event);
 
-      expect(response.statusCode).toBe(400);
+      assert.strictEqual(response.statusCode, 400);
     });
   });
 
@@ -81,9 +82,9 @@ describe('Lambda Handler', () => {
       const response = await handler(event);
       const body = JSON.parse(response.body);
 
-      expect(response.statusCode).toBe(200);
-      expect(body.year).toBe(2000);
-      expect(body.isLeapYear).toBe(true);
+      assert.strictEqual(response.statusCode, 200);
+      assert.strictEqual(body.year, 2000);
+      assert.strictEqual(body.isLeapYear, true);
     });
 
     test('範囲指定でうるう年リストを取得', async () => {
@@ -99,11 +100,11 @@ describe('Lambda Handler', () => {
       const response = await handler(event);
       const body = JSON.parse(response.body);
 
-      expect(response.statusCode).toBe(200);
-      expect(body.startYear).toBe(2020);
-      expect(body.endYear).toBe(2024);
-      expect(body.leapYears).toEqual([2020, 2024]);
-      expect(body.count).toBe(2);
+      assert.strictEqual(response.statusCode, 200);
+      assert.strictEqual(body.startYear, 2020);
+      assert.strictEqual(body.endYear, 2024);
+      assert.deepStrictEqual(body.leapYears, [2020, 2024]);
+      assert.strictEqual(body.count, 2);
     });
 
     test('パラメータが不足している場合はエラー', async () => {
@@ -116,8 +117,8 @@ describe('Lambda Handler', () => {
       const response = await handler(event);
       const body = JSON.parse(response.body);
 
-      expect(response.statusCode).toBe(400);
-      expect(body.error).toBeDefined();
+      assert.strictEqual(response.statusCode, 400);
+      assert.ok(body.error !== undefined);
     });
   });
 
@@ -130,10 +131,10 @@ describe('Lambda Handler', () => {
 
       const response = await handler(event);
 
-      expect(response.statusCode).toBe(200);
-      expect(response.headers['Access-Control-Allow-Origin']).toBe('*');
-      expect(response.headers['Access-Control-Allow-Methods']).toContain('GET');
-      expect(response.headers['Access-Control-Allow-Methods']).toContain('POST');
+      assert.strictEqual(response.statusCode, 200);
+      assert.strictEqual(response.headers['Access-Control-Allow-Origin'], '*');
+      assert.ok(response.headers['Access-Control-Allow-Methods'].includes('GET'));
+      assert.ok(response.headers['Access-Control-Allow-Methods'].includes('POST'));
     });
   });
 
@@ -146,7 +147,7 @@ describe('Lambda Handler', () => {
 
       const response = await handler(event);
 
-      expect(response.statusCode).toBe(405);
+      assert.strictEqual(response.statusCode, 405);
     });
   });
 
@@ -162,8 +163,8 @@ describe('Lambda Handler', () => {
 
       const response = await handler(event);
 
-      expect(response.headers['Access-Control-Allow-Origin']).toBe('*');
-      expect(response.headers['Content-Type']).toBe('application/json');
+      assert.strictEqual(response.headers['Access-Control-Allow-Origin'], '*');
+      assert.strictEqual(response.headers['Content-Type'], 'application/json');
     });
   });
 });
