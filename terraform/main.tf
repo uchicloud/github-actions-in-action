@@ -118,25 +118,11 @@ resource "aws_cloudwatch_log_group" "lambda" {
 }
 
 # Lambda関数用のZIPファイルを作成
-# lambdaディレクトリとsrcディレクトリの両方を含める
+# lambdaディレクトリの内容を含める（src/leap-year.jsを含む）
 data "archive_file" "lambda_zip" {
   type        = "zip"
+  source_dir  = "${path.module}/../lambda"
   output_path = "${path.module}/lambda-deployment.zip"
-
-  source {
-    content  = file("${path.module}/../lambda/handler.js")
-    filename = "handler.js"
-  }
-
-  source {
-    content  = file("${path.module}/../lambda/package.json")
-    filename = "package.json"
-  }
-
-  source {
-    content  = file("${path.module}/../src/leap-year.js")
-    filename = "src/leap-year.js"
-  }
 }
 
 # Lambda関数
