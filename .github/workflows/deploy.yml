@@ -33,13 +33,13 @@ jobs:
 
     steps:
       - name: コードのチェックアウト
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: pnpmのセットアップ
         uses: pnpm/action-setup@v4
 
       - name: Node.jsのセットアップ
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: '20'
           cache: 'pnpm'
@@ -62,10 +62,10 @@ jobs:
 
     steps:
       - name: コードのチェックアウト
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: AWS認証（OIDC）
-        uses: aws-actions/configure-aws-credentials@v4
+        uses: aws-actions/configure-aws-credentials@v5
         with:
           role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
           aws-region: ${{ env.AWS_REGION }}
@@ -109,13 +109,13 @@ jobs:
 
     steps:
       - name: コードのチェックアウト
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: pnpmのセットアップ
         uses: pnpm/action-setup@v4
 
       - name: Node.jsのセットアップ
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: '20'
           cache: 'pnpm'
@@ -129,7 +129,7 @@ jobs:
         run: pnpm run ssg
 
       - name: AWS認証（OIDC）
-        uses: aws-actions/configure-aws-credentials@v4
+        uses: aws-actions/configure-aws-credentials@v5
         with:
           role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
           aws-region: ${{ env.AWS_REGION }}
