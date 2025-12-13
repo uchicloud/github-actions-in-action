@@ -1,6 +1,6 @@
 import { describe, test } from 'node:test';
 import assert from 'node:assert';
-import { isLeapYear, getLeapYearReason, getLeapYearsInRange } from '../../src/leap-year.js';
+import { isLeapYear, getLeapYearReason, getLeapYearsInRange } from '../../lambda/src/leap-year.js';
 
 describe('isLeapYear', () => {
   describe('うるう年の判定', () => {
