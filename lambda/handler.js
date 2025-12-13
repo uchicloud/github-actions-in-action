@@ -1,4 +1,4 @@
-import { isLeapYear, getLeapYearReason, getLeapYearsInRange } from '../src/leap-year.js';
+import { isLeapYear, getLeapYearReason, getLeapYearsInRange } from './src/leap-year.js';
 
 /**
  * Lambda関数のメインハンドラー
