@@ -57,6 +57,52 @@ function renderPage(title, content) {
       color: white;
       padding: 30px;
       text-align: center;
+      position: relative;
+    }
+
+    .header-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 12px;
+      padding: 8px 16px;
+      border-radius: 999px;
+      border: 1px solid rgba(255, 255, 255, 0.25);
+      background: rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(6px);
+      font-size: 0.95rem;
+      letter-spacing: 0.02em;
+      transition: transform 0.3s ease, box-shadow 0.3s ease, background 0.3s ease;
+    }
+
+    .header-pill .pill-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: #c3e7ff;
+      box-shadow: 0 0 12px rgba(195, 231, 255, 0.8);
+      transition: transform 0.3s ease;
+    }
+
+    header:hover .header-pill {
+      transform: translateY(-4px) scale(1.02);
+      background: rgba(255, 255, 255, 0.18);
+      box-shadow: 0 10px 28px rgba(0, 0, 0, 0.16);
+    }
+
+    header:hover .header-pill .pill-dot {
+      animation: pillPulse 1.6s ease-in-out infinite;
+    }
+
+    @keyframes pillPulse {
+      0%, 100% {
+        transform: scale(1);
+        box-shadow: 0 0 12px rgba(195, 231, 255, 0.8);
+      }
+      50% {
+        transform: scale(1.2);
+        box-shadow: 0 0 18px rgba(195, 231, 255, 0.95);
+      }
     }
 
     header h1 {
@@ -224,6 +270,10 @@ function renderPage(title, content) {
 <body>
   <div class="container">
     <header>
+      <div class="header-pill" aria-hidden="true">
+        <span class="pill-dot"></span>
+        <span>CI/CD Ready</span>
+      </div>
       <h1>🗓️ うるう年判定</h1>
       <p>GitHub Actionsで学ぶCI/CD実践プロジェクト</p>
     </header>
