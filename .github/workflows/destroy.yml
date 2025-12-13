@@ -33,7 +33,7 @@ jobs:
           echo "🔐 IAMロール: leap-year-checker-lambda-role"
 
       - name: AWS認証（OIDC）
-        uses: aws-actions/configure-aws-credentials@v4
+        uses: aws-actions/configure-aws-credentials@v5
         with:
           role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
           aws-region: ${{ env.AWS_REGION }}
